@@ -34,14 +34,44 @@ def search_author_on_scopus(scopus_au_id: str, year: int = None, result_count: i
     result_df = pd.DataFrame(publications)
 
     # Tag what AU-ID is used in this query
-    result_df['Search_AU_ID'] = scopus_au_id
+    result_df['scopus_au_id'] = scopus_au_id
     result_df['source'] = 'Scopus'
 
     return result_df
 
 
+def retrieve_abstract_from_scopus(scopus_id: str) -> pd.DataFrame:
+    url = f"https://api.elsevier.com/content/abstract/scopus_id/{scopus_id}"
+    headers = {
+        "X-ELS-APIKey": scopus_api_key,
+        "Accept": "application/json"
+    }
+    params = {
+        "field": 'dc:title,authors,dc:description'
+    }
+    response = requests.get(url, headers=headers, params=params)
+
+    if response.status_code == 200:
+        data = json.loads(response.text)
+        entry = data['abstracts-retrieval-response']
+        abstract = entry['coredata']['dc:description']
+        authors = entry['authors']['author']
+        author_ids = ','.join([a['@auid'] for a in authors])
+        author_names = ','.join([a['ce:given-name'] + ' ' + a['ce:surname'] for a in authors])
+
+        result_df = pd.DataFrame({'scopus_id': scopus_id,
+                                  'abstract': abstract,
+                                  'author_ids': author_ids,
+                                  'author_names': author_names}, index=[0])
+        return result_df
+    else:
+        print(f"Error: {response.status_code}")
+        return None
+
+
 if __name__ == '__main__':
-    result = search_author_on_scopus(scopus_au_id='57209018448',
-                                     year=2022)
+    # result = search_author_on_scopus(scopus_au_id='57209398695',
+    #                                  year=2023)
+    result = retrieve_abstract_from_scopus(scopus_id='85141466366')
     print(result)
 
