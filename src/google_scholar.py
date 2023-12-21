@@ -12,7 +12,6 @@ def search_author_on_google_scholar(google_scholar_id: str, year: str = None) ->
     :return: a pandas dataframe
     """
     author = scholarly.search_author_id(id=google_scholar_id, filled=True, sortby='year')
-    scholarly.search_single_pub()
     result = [{'name': author['name'],
                'google_scholar_id': author['scholar_id'],
                'pub_title': b['title'],
@@ -25,11 +24,18 @@ def search_author_on_google_scholar(google_scholar_id: str, year: str = None) ->
     if year:
         result_df = result_df[result_df['pub_year'] == year]
 
+    if len(result_df) == 0:
+        result_df = pd.DataFrame({'name': pd.NA,
+                                  'google_scholar_id': pd.NA,
+                                  'pub_title': 'Result set is empty.',
+                                  'pub_year': pd.NA,
+                                  'source': 'Google Scholar'}, index=[0])
+
     return result_df
 
 
 def get_abstract_from_google_scholar(pub_title: str) -> pd.DataFrame:
-    pub = scholarly.search_single_pub(pub_title=pub_title, filled=True)
+    pub = scholarly.search_single_pub(pub_title=pub_title)
     bib = pub['bib']
 
     result = pd.DataFrame({'title': bib['title'],

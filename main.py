@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 import pandas as pd
-from src.google_scholar import search_author_on_google_scholar
+from src.google_scholar import search_author_on_google_scholar, get_abstract_from_google_scholar
 from src.scopus import search_author_on_scopus
 
 scopus_api_key = "52454aa42e8b5e5c4f5860f62a6d4c5f"
@@ -11,7 +11,9 @@ def overwrite_data(file, result, id_column):
     if os.path.exists(file):
         df = pd.read_csv(file)
         df[id_column] = df[id_column].astype('str')
-        df = df[df[id_column] != result[id_column][0]]  # remove the existing rows with the same ID
+        print(df)
+        print(result)
+        df = df[df[id_column] != result[id_column].iloc[0]]  # remove the existing rows with the same ID
     else:
         df = pd.DataFrame()
 
@@ -75,7 +77,24 @@ def collect_publications_for_PIs():
 
 
 def fill_abstract_for_google_scholar_results() -> None:
-    pass
+    # Read the CSV file
+    df = pd.read_csv('google_scholar_results.csv')
+
+    # Apply the function to each row in the DataFrame
+    additional_info_list = []
+    for pub_title in df['pub_title']:
+        additional_info = get_abstract_from_google_scholar(pub_title=pub_title)
+        print(additional_info)
+        additional_info_list.append(additional_info)
+
+    # Concatenate all additional info DataFrames
+    additional_info_df = pd.concat(additional_info_list, ignore_index=True)
+
+    # Join the additional info to the original DataFrame
+    df = df.join(additional_info_df)
+
+    # Write the updated DataFrame to a new CSV file
+    df.to_csv('updated_google_scholar_results.csv', index=False)
 
 
 def fill_abstract_for_scopus_results() -> None:
@@ -83,8 +102,8 @@ def fill_abstract_for_scopus_results() -> None:
 
 
 def main():
-
-    print(1)
+    # collect_publications_for_PIs()
+    fill_abstract_for_google_scholar_results()
 
 
 if __name__ == '__main__':

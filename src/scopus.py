@@ -11,6 +11,7 @@ def search_author_on_scopus(scopus_au_id: str, year: int = None, result_count: i
     This function is used to search for a scholar's publications on Scopus using their Scholar ID.
     The function can also filter the publications based on a specific year.
 
+    :param result_count:
     :param scopus_au_id: str - The Scholar ID of the author.
     :param year: str - The year of publication. If not provided, publications from all years are returned.
     :return: pd.DataFrame - A DataFrame containing the retrieved publications.
@@ -70,8 +71,8 @@ def retrieve_abstract_from_scopus(scopus_id: str) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    # result = search_author_on_scopus(scopus_au_id='57209398695',
-    #                                  year=2023)
-    result = retrieve_abstract_from_scopus(scopus_id='85141466366')
+    result = search_author_on_scopus(scopus_au_id='56250119900',
+                                     year=2023)
+    # result = retrieve_abstract_from_scopus(scopus_id='85141466366')
     print(result)
 
