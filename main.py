@@ -102,8 +102,8 @@ def fill_abstract_for_scopus_results() -> None:
 
 
 def main():
-    # collect_publications_for_PIs()
     fill_abstract_for_google_scholar_results()
+    collect_publications_for_PIs()
 
 
 if __name__ == '__main__':
