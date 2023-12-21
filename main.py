@@ -83,8 +83,7 @@ def fill_abstract_for_scopus_results() -> None:
 
 
 def main():
-
-    print(1)
+    collect_publications_for_PIs()
 
 
 if __name__ == '__main__':

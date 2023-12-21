@@ -12,7 +12,6 @@ def search_author_on_google_scholar(google_scholar_id: str, year: str = None) ->
     :return: a pandas dataframe
     """
     author = scholarly.search_author_id(id=google_scholar_id, filled=True, sortby='year')
-    scholarly.search_single_pub()
     result = [{'name': author['name'],
                'google_scholar_id': author['scholar_id'],
                'pub_title': b['title'],
