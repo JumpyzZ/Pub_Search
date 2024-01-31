@@ -1,8 +1,12 @@
 import time
 import pandas as pd
-from scholarly import scholarly
+from scholarly import scholarly, ProxyGenerator
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
+
+pg = ProxyGenerator()
+pg.FreeProxies()
+scholarly.use_proxy(pg)
 
 
 def search_author_on_google_scholar(google_scholar_id: str, year: str = None) -> pd.DataFrame:
@@ -53,25 +57,36 @@ def fill_abstract_for_google_scholar_result():
     file_path = "../google_scholar_results.csv"
     df = pd.read_csv(file_path)
 
+    # Check if 'abstract' column exists, if not, create it
+    if 'abstract' not in df.columns:
+        df['abstract'] = ''
+
     # Iterate over rows and retrieve abstracts
-    abstracts = []
     for index, row in df.iterrows():
+        if pd.notnull(row["abstract"]):
+            # Skip if already have abstract
+            continue
+
         try:
             title = row["pub_title"]
         except AttributeError:
-            # this author don't have a single paper.
-            abstracts.append('')
+            # This author doesn't have a single paper.
+            df.at[index, 'abstract'] = '-'
             continue
 
         abstract = get_abstract_from_google_scholar(title)
-        abstracts.append(abstract)
-        time.sleep(3)
+        df.at[index, 'abstract'] = abstract
+        print(df['abstract'])
 
-    # Add abstracts to DataFrame
-    df["abstract"] = abstracts
+        # Save CSV after obtaining a new abstract
+        df.to_csv(file_path, index=False)
+        print('CSV Saved.')
 
-    # Write back to Excel file
-    df.to_csv(file_path, index=False)
+    # # Add abstracts to DataFrame
+    # df["abstract"] = abstracts
+    #
+    # # Write back to Excel file
+    # df.to_csv(file_path, index=False)
 
 
 def main():
