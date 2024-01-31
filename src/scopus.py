@@ -1,6 +1,7 @@
 import requests
 import json
 import pandas as pd
+from openpyxl import load_workbook
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
 scopus_api_key = "52454aa42e8b5e5c4f5860f62a6d4c5f"
@@ -41,7 +42,7 @@ def search_author_on_scopus(scopus_au_id: str, year: int = None, result_count: i
     return result_df
 
 
-def retrieve_abstract_from_scopus(scopus_id: str) -> pd.DataFrame:
+def retrieve_abstract_from_scopus(scopus_id: str) -> str:
     url = f"https://api.elsevier.com/content/abstract/scopus_id/{scopus_id}"
     headers = {
         "X-ELS-APIKey": scopus_api_key,
@@ -52,27 +53,59 @@ def retrieve_abstract_from_scopus(scopus_id: str) -> pd.DataFrame:
     }
     response = requests.get(url, headers=headers, params=params)
 
+    scopus_result_df = None
     if response.status_code == 200:
         data = json.loads(response.text)
         entry = data['abstracts-retrieval-response']
-        abstract = entry['coredata']['dc:description']
-        authors = entry['authors']['author']
-        author_ids = ','.join([a['@auid'] for a in authors])
-        author_names = ','.join([a['ce:given-name'] + ' ' + a['ce:surname'] for a in authors])
+        print(scopus_id, entry['coredata'])
+        try:
+            abstract = entry['coredata']['dc:description']
+        except KeyError:
+            # there are publications that doesn't have a abstract
+            abstract = ''
+        # authors = entry['authors']['author']
+        # author_ids = ','.join([a['@auid'] for a in authors])
+        # author_names = ','.join([a['ce:given-name'] + ' ' + a['ce:surname'] for a in authors])
 
-        result_df = pd.DataFrame({'scopus_id': scopus_id,
-                                  'abstract': abstract,
-                                  'author_ids': author_ids,
-                                  'author_names': author_names}, index=[0])
-        return result_df
+        return abstract
+        # scopus_result_df = pd.DataFrame({'scopus_id': scopus_id,
+        #                                  'abstract': abstract,
+        #                                  'author_ids': author_ids,
+        #                                  'author_names': author_names}, index=[0])
     else:
         print(f"Error: {response.status_code}")
-        return None
+        return ''
+
+
+def fill_abstract_for_scopus_result():
+    # Read Excel file
+    file_path = "../scopus_results.csv"
+    sheet_name = "scopus_results"
+    df = pd.read_csv(file_path)
+
+    # Iterate over rows and retrieve abstracts
+    abstracts = []
+    for index, row in df.iterrows():
+        try:
+            scopus_id = row["dc:identifier"].replace('SCOPUS_ID:', '')
+        except AttributeError:
+            # this author don't have a single paper.
+            abstracts.append('')
+            continue
+
+        abstract = retrieve_abstract_from_scopus(scopus_id)
+        abstracts.append(abstract)
+
+    # Add abstracts to DataFrame
+    df["abstract"] = abstracts
+
+    # Write back to Excel file
+    df.to_csv(file_path, index=False)
 
 
 if __name__ == '__main__':
-    result = search_author_on_scopus(scopus_au_id='56250119900',
-                                     year=2023)
-    # result = retrieve_abstract_from_scopus(scopus_id='85141466366')
-    print(result)
+    # result = search_author_on_scopus(scopus_au_id='56250119900',
+    #                                  year=2023)
+    # abstract = retrieve_abstract_from_scopus(scopus_id='85180603045')
+    fill_abstract_for_scopus_result()
 

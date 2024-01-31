@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 from scholarly import scholarly
 pd.set_option('display.max_rows', None)
@@ -34,22 +35,49 @@ def search_author_on_google_scholar(google_scholar_id: str, year: str = None) ->
     return result_df
 
 
-def get_abstract_from_google_scholar(pub_title: str) -> pd.DataFrame:
+def get_abstract_from_google_scholar(pub_title: str) -> str:
     pub = scholarly.search_single_pub(pub_title=pub_title)
     bib = pub['bib']
+    print(pub_title, bib)
+    # result = pd.DataFrame({'title': bib['title'],
+    #                        'abstract': bib['abstract'],
+    #                        'author': bib['author'],
+    #                        'pub_type': bib['pub_type'],
+    #                        'pub_url': pub['pub_url']}, index=[0])
+    abstract = bib['abstract']
+    return abstract
 
-    result = pd.DataFrame({'title': bib['title'],
-                           'abstract': bib['abstract'],
-                           'author': bib['author'],
-                           'pub_type': bib['pub_type'],
-                           'pub_url': pub['pub_url']}, index=[0])
-    return result
+
+def fill_abstract_for_google_scholar_result():
+    # Read Excel file
+    file_path = "../google_scholar_results.csv"
+    df = pd.read_csv(file_path)
+
+    # Iterate over rows and retrieve abstracts
+    abstracts = []
+    for index, row in df.iterrows():
+        try:
+            title = row["pub_title"]
+        except AttributeError:
+            # this author don't have a single paper.
+            abstracts.append('')
+            continue
+
+        abstract = get_abstract_from_google_scholar(title)
+        abstracts.append(abstract)
+        time.sleep(3)
+
+    # Add abstracts to DataFrame
+    df["abstract"] = abstracts
+
+    # Write back to Excel file
+    df.to_csv(file_path, index=False)
 
 
 def main():
     # result = search_author_on_google_scholar(google_scholar_id='Q5MZLZQAAAAJ', year='2022')
-    result = get_abstract_from_google_scholar(pub_title='Sticky Floors, Double-Binds, and Double Whammies: Adjusting for Research Performance Reveals Universitiesâ€™ Gender Pay Gap is Not Disappearing')
-    print(result)
+    # result = get_abstract_from_google_scholar(pub_title='Sticky Floors, Double-Binds, and Double Whammies: Adjusting for Research Performance Reveals Universitiesâ€™ Gender Pay Gap is Not Disappearing')
+    fill_abstract_for_google_scholar_result()
 
 
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 import os
+import csv
 from datetime import datetime
 import pandas as pd
 from src.google_scholar import search_author_on_google_scholar, get_abstract_from_google_scholar
@@ -21,7 +22,7 @@ def overwrite_data(file, result, id_column):
     df.to_csv(file, index=False)
 
 
-def collect_publications_for_PIs():
+def collect_publications_for_PIs(year):
     # Load the data from the Excel file
     df = pd.read_excel('TPM 2023 Principal Investigators.xlsx')
 
@@ -54,7 +55,7 @@ def collect_publications_for_PIs():
         # Search on Google Scholar and Scopus, and write the results to the CSV files
         if pd.notnull(google_scholar_id):
             print(f'Searching for Google Scholar ID {google_scholar_id}: {last_name} {first_name}')
-            google_scholar_result = search_author_on_google_scholar(google_scholar_id=google_scholar_id, year='2023')
+            google_scholar_result = search_author_on_google_scholar(google_scholar_id=google_scholar_id, year=str(year))
 
             google_scholar_result['first_name'] = first_name
             google_scholar_result['last_name'] = last_name
@@ -64,7 +65,7 @@ def collect_publications_for_PIs():
 
         if pd.notnull(scopus_au_id):
             print(f'Searching for Scopus AU-ID {scopus_au_id}: {last_name} {first_name}')
-            scopus_result = search_author_on_scopus(scopus_au_id=scopus_au_id, year=2023)
+            scopus_result = search_author_on_scopus(scopus_au_id=scopus_au_id, year=year)
 
             column_names = ['@_fa','error','link','prism:url','dc:identifier','eid','dc:title','dc:creator','prism:publicationName','prism:eIssn','prism:volume','prism:issueIdentifier','prism:pageRange','prism:coverDate','prism:coverDisplayDate','prism:doi','citedby-count','affiliation','pubmed-id','prism:aggregationType','subtype','subtypeDescription','source-id','openaccess','openaccessFlag','freetoread','freetoreadLabel','article-number','prism:isbn','scopus_au_id','source']
             scopus_result = scopus_result.reindex(columns=column_names)
@@ -101,9 +102,23 @@ def fill_abstract_for_scopus_results() -> None:
     pass
 
 
+def create_empty_csv_if_not_exist(filename):
+    if not os.path.exists(filename):
+        with open(filename, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([])
+        print(f"Empty CSV file '{filename}' created successfully.")
+    else:
+        print(f"CSV file '{filename}' already exists.")
+
+
 def main():
-    fill_abstract_for_google_scholar_results()
-    collect_publications_for_PIs()
+    # # Check and create empty CSV files if they don't exist
+    # create_empty_csv_if_not_exist('scopus_results.csv')
+    # create_empty_csv_if_not_exist('google_scholar_results.csv')
+
+    # fill_abstract_for_google_scholar_results()
+    collect_publications_for_PIs(year=2023)
 
 
 if __name__ == '__main__':
